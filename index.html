@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Assinaturas e Serviços Digitais</title>
+  
+  <!-- Bibliotecas para exportar para PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <!-- Fonte Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --primary-hover: #407abf;
+      --secondary-color: #50e3c2;
+      --background-color: #f5f7fa;
+      --card-background: #ffffff;
+      --text-color: #333;
+      --alert-color: rgba(255,107,107,0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--background-color);
+      color: var(--text-color);
+    }
+
+    /* Layout principal */
+    main {
+      max-width: 1200px; 
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+
+    /* Container que será exportado para PDF:
+       inclui o cabeçalho e a tabela (respeitando a largura máxima). */
+    #pdfContent {
+      margin-bottom: 20px;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      padding: 20px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      border-radius: 8px 8px 0 0;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.2em;
+      font-weight: 700;
+    }
+    header p {
+      margin-top: 10px;
+      font-size: 1.1em;
+      font-weight: 300;
+    }
+
+    /* Cartão padrão */
+    .card {
+      background: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    /* Centraliza os títulos <h2> dos cartões */
+    .card h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    /* Seção da tabela */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-background);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    thead {
+      background: var(--primary-color);
+      color: #fff;
+    }
+    th, td {
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    tbody tr:hover {
+      background: #f0f8ff;
+      transition: background 0.2s;
+    }
+    .alert {
+      background-color: var(--alert-color);
+    }
+    #monthlyTotal {
+      margin-top: 20px;
+      font-size: 1.1em;
+      font-weight: 500;
+      text-align: right;
+    }
+
+    /* Botões de ação na tabela */
+    .action-button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+      margin: 0 2px;
+      transition: background 0.3s;
+    }
+    .edit-btn {
+      background-color: #ffc107;
+      color: #fff;
+    }
+    .edit-btn:hover {
+      background-color: #e0a806;
+    }
+    .delete-btn {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .delete-btn:hover {
+      background-color: #b52b39;
+    }
+
+    /* Botão de exportar PDF */
+    #exportPDF {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 5px;
+    }
+    #exportPDF:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Container flex para os cartões de Cadastro e Exportação */
+    .flex-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    /* Aumenta a largura do cartão "Cadastrar Assinatura" */
+    .flex-container .card.form-card {
+      flex: 1 1 70%;
+    }
+
+    /* Cartão "Exportar Dados" com largura fixa */
+    .flex-container .card.export-card {
+      max-width: 250px;
+      flex-shrink: 0;
+    }
+
+    /* Formulário */
+    form {
+      display: grid;
+      gap: 15px;
+    }
+    form label {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    form input, form select, form button {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1em;
+      width: 100%;
+    }
+    form input:focus, form select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 5px rgba(74,144,226,0.5);
+    }
+    form button {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    form button:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8em;
+      }
+      th, td {
+        padding: 10px;
+      }
+      .flex-container .card.form-card {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- Container que será exportado para PDF -->
+    <div id="pdfContent">
+      <!-- Cabeçalho (incluído no PDF) -->
+      <header>
+        <h1>Controle de Assinaturas e Serviços Digitais</h1>
+        <p>Evite cobranças indesejadas e gerencie assinaturas de serviços online.</p>
+      </header>
+
+      <!-- Seção da tabela com estilo de cartão -->
+      <section id="tableSection" class="card">
+        <h2>Assinaturas Cadastradas</h2>
+        <table id="subscriptionTable">
+          <thead>
+            <tr>
+              <th>Serviço</th>
+              <th>Valor (R$)</th>
+              <th>Periodicidade</th>
+              <th>Data de Renovação</th>
+              <th>Dias para Renovação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- As assinaturas serão adicionadas aqui -->
+          </tbody>
+        </table>
+        <div id="monthlyTotal">Total Gasto Mensal: R$ 0.00</div>
+      </section>
+    </div>
+
+    <!-- Área flex com cartões para Cadastro e Exportação -->
+    <div class="flex-container">
+      <!-- Cartão do formulário "Cadastrar Assinatura" -->
+      <section class="card form-card">
+        <h2>Cadastrar Assinatura</h2>
+        <form id="subscriptionForm">
+          <div>
+            <label for="serviceName">Nome do Serviço:</label>
+            <select id="serviceName" required>
+              <option value="" disabled selected>Selecione um serviço</option>
+              <!-- Streaming -->
+              <optgroup label="Streaming de Vídeo">
+                <option value="Netflix">Netflix</option>
+                <option value="Amazon Prime Video">Amazon Prime Video</option>
+                <option value="Disney+">Disney+</option>
+                <option value="HBO Max">HBO Max</option>
+                <option value="Apple TV+">Apple TV+</option>
+                <option value="Paramount+">Paramount+</option>
+                <option value="Star+">Star+</option>
+                <option value="Globoplay">Globoplay</option>
+                <option value="Pluto TV">Pluto TV</option>
+                <option value="Sling TV">Sling TV</option>
+              </optgroup>
+              <optgroup label="Streaming de Música">
+                <option value="Spotify">Spotify</option>
+                <option value="Deezer">Deezer</option>
+                <option value="Tidal">Tidal</option>
+              </optgroup>
+              <optgroup label="Streaming de Animes e Séries">
+                <option value="Crunchyroll">Crunchyroll</option>
+              </optgroup>
+              <optgroup label="Outros Streaming">
+                <option value="Discovery+">Discovery+</option>
+                <option value="Peacock">Peacock</option>
+                <option value="YouTube Premium">YouTube Premium</option>
+              </optgroup>
+              <!-- Serviços Digitais Adicionais -->
+              <optgroup label="Software &amp; Produtividade">
+                <option value="Microsoft 365">Microsoft 365</option>
+                <option value="Adobe Creative Cloud">Adobe Creative Cloud</option>
+                <option value="Autodesk">Autodesk</option>
+                <option value="Slack">Slack</option>
+                <option value="Zoom">Zoom</option>
+                <option value="Dropbox">Dropbox</option>
+                <option value="Google Workspace">Google Workspace</option>
+                <option value="GitHub Pro">GitHub Pro</option>
+              </optgroup>
+              <optgroup label="Educação &amp; Conteúdo">
+                <option value="Coursera Plus">Coursera Plus</option>
+                <option value="Udemy for Business">Udemy for Business</option>
+                <option value="Scribd">Scribd</option>
+                <option value="Audible">Audible</option>
+              </optgroup>
+              <optgroup label="Saúde &amp; Bem-estar">
+                <option value="Headspace">Headspace</option>
+                <option value="Calm">Calm</option>
+                <option value="Fitbit Premium">Fitbit Premium</option>
+              </optgroup>
+              <optgroup label="Entretenimento &amp; Jogos">
+                <option value="Xbox Game Pass">Xbox Game Pass</option>
+                <option value="PlayStation Plus">PlayStation Plus</option>
+                <option value="EA Play">EA Play</option>
+              </optgroup>
+              <optgroup label="Outros Serviços Digitais">
+                <option value="Canva Pro">Canva Pro</option>
+                <option value="NordVPN">NordVPN</option>
+                <option value="ExpressVPN">ExpressVPN</option>
+              </optgroup>
+            </select>
+          </div>
+          <div>
+            <label for="price">Valor da Assinatura (R$):</label>
+            <input type="number" id="price" step="0.01" required placeholder="Ex: 29.90">
+          </div>
+          <div>
+            <label for="periodicity">Periodicidade:</label>
+            <select id="periodicity" required>
+              <option value="mensal">Mensal</option>
+              <option value="anual">Anual</option>
+            </select>
+          </div>
+          <div>
+            <label for="renewalDate">Data de Renovação Automática:</label>
+            <input type="date" id="renewalDate" required>
+          </div>
+          <div>
+            <button type="submit" id="submitButton">Adicionar Assinatura</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Cartão do botão "Exportar Dados" -->
+      <section class="card export-card">
+        <h2>Exportar Dados</h2>
+        <p>Clique para gerar um PDF com a lista de assinaturas.</p>
+        <button id="exportPDF" onclick="exportToPDF()">Exportar para PDF</button>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let subscriptions = [];
+    let editIndex = -1; // Índice do item em edição (-1 = nenhum item em edição)
+
+    // Carrega os dados do localStorage
+    function loadSubscriptions() {
+      const stored = localStorage.getItem('subscriptions');
+      if (stored) {
+        subscriptions = JSON.parse(stored);
+        updateTable();
+      }
+    }
+
+    // Salva os dados no localStorage
+    function saveSubscriptions() {
+      localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+    }
+
+    // Calcula a diferença em dias entre hoje e a data de renovação
+    function getDaysDifference(date) {
+      const today = new Date();
+      const renewal = new Date(date);
+      today.setHours(0, 0, 0, 0);
+      renewal.setHours(0, 0, 0, 0);
+      return Math.ceil((renewal - today) / (1000 * 60 * 60 * 24));
+    }
+
+    // Atualiza a tabela e o total mensal exibido
+    function updateTable() {
+      const tbody = document.querySelector('#subscriptionTable tbody');
+      tbody.innerHTML = '';
+      let totalMonthly = 0;
+
+      subscriptions.forEach((sub, index) => {
+        const row = document.createElement('tr');
+        const daysToRenewal = getDaysDifference(sub.renewalDate);
+
+        if (daysToRenewal <= 7) {
+          row.classList.add('alert');
+        }
+
+        let monthlyCost = sub.price;
+        if (sub.periodicity === 'anual') {
+          monthlyCost = sub.price / 12;
+        }
+        totalMonthly += monthlyCost;
+
+        row.innerHTML = `
+          <td>${sub.serviceName}</td>
+          <td>${sub.price.toFixed(2)}</td>
+          <td>${sub.periodicity.charAt(0).toUpperCase() + sub.periodicity.slice(1)}</td>
+          <td>${new Date(sub.renewalDate).toLocaleDateString('pt-BR')}</td>
+          <td>${daysToRenewal >= 0 ? daysToRenewal : 'Vencido'}</td>
+          <td>
+            <button class="action-button edit-btn" onclick="editSubscription(${index})">Editar</button>
+            <button class="action-button delete-btn" onclick="deleteSubscription(${index})">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById('monthlyTotal').textContent = 'Total Gasto Mensal: R$ ' + totalMonthly.toFixed(2);
+      saveSubscriptions();
+    }
+
+    // Inicia o modo de edição: carrega os dados no formulário
+    function editSubscription(index) {
+      const sub = subscriptions[index];
+      document.getElementById('serviceName').value = sub.serviceName;
+      document.getElementById('price').value = sub.price;
+      document.getElementById('periodicity').value = sub.periodicity;
+      document.getElementById('renewalDate').value = sub.renewalDate;
+      document.getElementById('submitButton').textContent = 'Salvar Alterações';
+      editIndex = index;
+    }
+
+    // Exclui uma assinatura após confirmação
+    function deleteSubscription(index) {
+      if (confirm('Deseja realmente excluir esta assinatura?')) {
+        subscriptions.splice(index, 1);
+        updateTable();
+      }
+    }
+
+    // Evento de submissão do formulário (adicionar ou salvar edição)
+    document.getElementById('subscriptionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const serviceName = document.getElementById('serviceName').value;
+      const price = parseFloat(document.getElementById('price').value);
+      const periodicity = document.getElementById('periodicity').value;
+      const renewalDate = document.getElementById('renewalDate').value;
+      const subscription = { serviceName, price, periodicity, renewalDate };
+
+      if (editIndex > -1) {
+        subscriptions[editIndex] = subscription;
+        editIndex = -1;
+        document.getElementById('submitButton').textContent = 'Adicionar Assinatura';
+      } else {
+        subscriptions.push(subscription);
+      }
+      updateTable();
+      document.getElementById('subscriptionForm').reset();
+    });
+
+    // Função para exportar o conteúdo de "pdfContent" (header + tabela) para PDF
+    function exportToPDF() {
+      const exportBtn = document.getElementById('exportPDF');
+      exportBtn.style.display = 'none';
+
+      html2canvas(document.getElementById('pdfContent')).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = canvas.height * pdfWidth / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('assinaturas.pdf');
+        exportBtn.style.display = 'block';
+      });
+    }
+
+    loadSubscriptions();
+    setInterval(updateTable, 60000);
+  </script>
+</body>
+</html>
