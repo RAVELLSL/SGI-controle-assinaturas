@@ -42,8 +42,7 @@
       padding: 0 20px;
     }
 
-    /* Container que será exportado para PDF:
-       inclui o cabeçalho e a tabela (respeitando a largura máxima). */
+    /* Container que será exportado para PDF */
     #pdfContent {
       margin-bottom: 20px;
     }
@@ -75,14 +74,17 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
-    /* Centraliza os títulos <h2> dos cartões */
     .card h2 {
       text-align: center;
       margin-bottom: 15px;
       font-weight: 600;
     }
 
-    /* Seção da tabela */
+    /* Wrapper responsivo para a tabela */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -160,13 +162,9 @@
       flex-wrap: wrap;
       gap: 20px;
     }
-
-    /* Aumenta a largura do cartão "Cadastrar Assinatura" */
     .flex-container .card.form-card {
       flex: 1 1 70%;
     }
-
-    /* Cartão "Exportar Dados" com largura fixa */
     .flex-container .card.export-card {
       max-width: 250px;
       flex-shrink: 0;
@@ -205,16 +203,45 @@
       background: var(--primary-hover);
     }
 
-    /* Responsividade */
+    /* Responsividade para telas menores */
     @media (max-width: 768px) {
       header h1 {
         font-size: 1.8em;
       }
+      header p {
+        font-size: 1em;
+      }
       th, td {
         padding: 10px;
+        font-size: 0.9em;
       }
-      .flex-container .card.form-card {
+      .flex-container {
+        flex-direction: column;
+      }
+      .flex-container .card.form-card,
+      .flex-container .card.export-card {
         flex: 1 1 100%;
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 1.5em;
+      }
+      header p {
+        font-size: 0.9em;
+      }
+      th, td {
+        padding: 8px;
+        font-size: 0.8em;
+      }
+      #monthlyTotal {
+        font-size: 1em;
+        text-align: left;
+      }
+      form input, form select, form button {
+        font-size: 0.9em;
       }
     }
   </style>
@@ -232,21 +259,23 @@
       <!-- Seção da tabela com estilo de cartão -->
       <section id="tableSection" class="card">
         <h2>Assinaturas Cadastradas</h2>
-        <table id="subscriptionTable">
-          <thead>
-            <tr>
-              <th>Serviço</th>
-              <th>Valor (R$)</th>
-              <th>Periodicidade</th>
-              <th>Data de Renovação</th>
-              <th>Dias para Renovação</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- As assinaturas serão adicionadas aqui -->
-          </tbody>
-        </table>
+        <div class="table-wrapper">
+          <table id="subscriptionTable">
+            <thead>
+              <tr>
+                <th>Serviço</th>
+                <th>Valor (R$)</th>
+                <th>Periodicidade</th>
+                <th>Data de Renovação</th>
+                <th>Dias para Renovação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- As assinaturas serão adicionadas aqui -->
+            </tbody>
+          </table>
+        </div>
         <div id="monthlyTotal">Total Gasto Mensal: R$ 0.00</div>
       </section>
     </div>
@@ -455,7 +484,7 @@
       document.getElementById('subscriptionForm').reset();
     });
 
-    // Função para exportar o conteúdo de "pdfContent" (header + tabela) para PDF
+    // Função para exportar o conteúdo de "pdfContent" para PDF
     function exportToPDF() {
       const exportBtn = document.getElementById('exportPDF');
       exportBtn.style.display = 'none';
